@@ -202,8 +202,15 @@ pub fn create_reg_env(flags: &settings::Flags) -> MachineEnv {
         ],
         non_preferred_regs_by_class: [
             vec![
-                preg(xreg(19)),
-                preg(xreg(20)),
+		// HFI: remove x19 and x20 from consideration to
+		// emulate increased register pressure. The difference
+		// between *this* and a normal configuration should
+		// approximate the difference between a normal
+		// configuration and a hypothetical one with two more
+		// registers to play with, due to the lack of
+		// long-lived values for heap base and limit.
+                //preg(xreg(19)),
+                //preg(xreg(20)),
                 // x21 is pinned reg if enabled; we add to this list below if not.
                 preg(xreg(22)),
                 preg(xreg(23)),

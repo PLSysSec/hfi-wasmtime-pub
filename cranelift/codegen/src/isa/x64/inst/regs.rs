@@ -198,7 +198,15 @@ pub(crate) fn create_reg_env_systemv(flags: &settings::Flags) -> MachineEnv {
         ],
         non_preferred_regs_by_class: [
             // Non-preferred GPRs: callee-saved in the SysV ABI.
-            vec![preg(rbx()), preg(r12()), preg(r13()), preg(r14())],
+	    //
+	    // HFI: remove r12 and r13 from consideration to emulate
+	    // increased register pressure. The difference between
+	    // *this* and a normal configuration should approximate
+	    // the difference between a normal configuration and a
+	    // hypothetical one with two more registers to play with,
+	    // due to the lack of long-lived values for heap base and
+	    // limit.
+            vec![preg(rbx()), /* preg(r12()), preg(r13()), */ preg(r14())],
             // Non-preferred XMMs: none.
             vec![],
         ],
