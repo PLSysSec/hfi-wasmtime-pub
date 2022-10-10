@@ -204,6 +204,7 @@ struct InstancePool {
     instance_size: usize,
     max_instances: usize,
     index_allocator: Mutex<PoolingAllocationState>,
+    stale_slots: Mutex<Vec<SlotId>>,
     memories: MemoryPool,
     tables: TablePool,
 }
@@ -235,6 +236,7 @@ impl InstancePool {
             instance_size,
             max_instances,
             index_allocator: Mutex::new(PoolingAllocationState::new(strategy, max_instances)),
+            stale_slots: Mutex::new(vec![]),
             memories: MemoryPool::new(instance_limits, tunables)?,
             tables: TablePool::new(instance_limits)?,
         };
@@ -348,7 +350,25 @@ impl InstancePool {
         // touched again until we write a fresh Instance in-place with
         // std::ptr::write in allocate() above.
 
-        self.index_allocator.lock().unwrap().free(SlotId(index));
+        // HFI: don't return index to free pool.
+        //self.index_allocator.lock().unwrap().free(SlotId(index));
+        self.stale_slots.lock().unwrap().push(SlotId(index));
+    }
+
+    pub unsafe fn deferred_dealloc(&self) {
+        let slots = std::mem::take(&mut *self.stale_slots.lock().unwrap());
+        let memory_area = self.memories.mapping.as_slice();
+        rustix::mm::madvise(
+            &memory_area[0] as *const _ as *mut c_void,
+            memory_area.len(),
+            rustix::mm::Advice::LinuxDontNeed,
+        )
+        .unwrap();
+
+        let mut alloc = self.index_allocator.lock().unwrap();
+        for slot in slots {
+            alloc.free(slot);
+        }
     }
 
     fn allocate_instance_resources(
@@ -518,6 +538,7 @@ impl InstancePool {
             );
 
             drop(table);
+            // HFI: remove this; do it in bulk!
             decommit_table_pages(base, size).expect("failed to decommit table pages");
         }
     }
@@ -1054,6 +1075,10 @@ impl PoolingInstanceAllocator {
 }
 
 unsafe impl InstanceAllocator for PoolingInstanceAllocator {
+    unsafe fn deferred_dealloc(&self) {
+        self.instances.deferred_dealloc();
+    }
+
     fn validate(&self, module: &Module) -> Result<()> {
         self.instances.validate_memory_plans(module)?;
         self.instances.validate_table_plans(module)?;

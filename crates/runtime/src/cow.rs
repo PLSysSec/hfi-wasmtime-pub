@@ -478,6 +478,8 @@ impl MemoryImageSlot {
                 // CoW memory (the initial heap image). This has the precise
                 // semantics we want for reuse between instances, so it's all we
                 // need to do.
+                // HFI: remove this call; we'll madvise the whole pool at once!
+                /*
                 unsafe {
                     rustix::mm::madvise(
                         self.base as *mut c_void,
@@ -485,6 +487,7 @@ impl MemoryImageSlot {
                         rustix::mm::Advice::LinuxDontNeed,
                     )?;
                 }
+                */
             } else {
                 // If we're not on Linux, however, then there's no generic
                 // platform way to reset memory back to its original state, so

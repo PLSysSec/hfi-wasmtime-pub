@@ -136,6 +136,14 @@ impl Engine {
         self.inner.allocator.as_ref()
     }
 
+    /// Do deferred cleanup in the instance allocator.
+    /// HFI: used for batched-madvise benchmark.
+    pub fn deferred_cleanup(&self) {
+        unsafe {
+            self.allocator().deferred_dealloc();
+        }
+    }
+
     pub(crate) fn profiler(&self) -> &dyn ProfilingAgent {
         self.inner.profiler.as_ref()
     }

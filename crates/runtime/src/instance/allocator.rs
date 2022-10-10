@@ -187,6 +187,9 @@ pub unsafe trait InstanceAllocator: Send + Sync {
     /// The provided stack is required to have been allocated with `allocate_fiber_stack`.
     #[cfg(feature = "async")]
     unsafe fn deallocate_fiber_stack(&self, stack: &wasmtime_fiber::FiberStack);
+
+    /// Do a deferred dealloc of all slots.
+    unsafe fn deferred_dealloc(&self) {}
 }
 
 fn get_table_init_start(
