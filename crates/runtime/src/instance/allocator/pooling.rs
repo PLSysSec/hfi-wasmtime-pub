@@ -744,6 +744,8 @@ impl MemoryPool {
                 anyhow!("total size of memory reservation exceeds addressable memory")
             })?;
 
+        println!("heaps: allocation_size = {} GiB", allocation_size >> 30);
+
         // Create a completely inaccessible region to start
         let mapping = Mmap::accessible_reserved(0, allocation_size)
             .context("failed to create memory pool mapping")?;

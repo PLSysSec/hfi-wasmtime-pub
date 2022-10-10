@@ -1,5 +1,5 @@
 (module
-  (memory 100 100)
+  (memory 24 24)
   (data 0 (i32.const 0) "asdf")
   (data 0 (i32.const 1048576) "jkl;")
   (func (export "_start")
@@ -29,4 +29,4 @@
         i32.store
         i32.const 1048576
         i32.const 0
-        i32.store)
+        i32.store))
