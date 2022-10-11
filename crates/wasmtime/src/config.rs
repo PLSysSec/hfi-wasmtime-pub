@@ -1436,7 +1436,7 @@ impl Config {
         if self.tunables.static_memory_offset_guard_size
             < self.tunables.dynamic_memory_offset_guard_size
         {
-            bail!("static memory guard size cannot be smaller than dynamic memory guard size");
+//            bail!("static memory guard size cannot be smaller than dynamic memory guard size");
         }
 
         Ok(())
@@ -1549,6 +1549,12 @@ impl Config {
     #[cfg(feature = "component-model")]
     pub fn debug_adapter_modules(&mut self, debug: bool) -> &mut Self {
         self.tunables.debug_adapter_modules = debug;
+        self
+    }
+
+    /// Enable deferred dealloc.
+    pub fn deferred_dealloc(&mut self, defer: bool) -> &mut Self {
+        self.tunables.deferred_dealloc = defer;
         self
     }
 }

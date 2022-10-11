@@ -467,7 +467,7 @@ impl MemoryImageSlot {
     }
 
     #[allow(dead_code)] // ignore warnings as this is only used in some cfgs
-    pub(crate) fn clear_and_remain_ready(&mut self) -> Result<()> {
+    pub(crate) fn clear_and_remain_ready(&mut self, defer: bool) -> Result<()> {
         assert!(self.dirty);
 
         cfg_if::cfg_if! {
@@ -479,15 +479,15 @@ impl MemoryImageSlot {
                 // semantics we want for reuse between instances, so it's all we
                 // need to do.
                 // HFI: remove this call; we'll madvise the whole pool at once!
-                /*
-                unsafe {
-                    rustix::mm::madvise(
-                        self.base as *mut c_void,
-                        self.cur_size,
-                        rustix::mm::Advice::LinuxDontNeed,
-                    )?;
+                if !defer {
+                    unsafe {
+                        rustix::mm::madvise(
+                            self.base as *mut c_void,
+                            self.cur_size,
+                            rustix::mm::Advice::LinuxDontNeed,
+                        )?;
+                    }
                 }
-                */
             } else {
                 // If we're not on Linux, however, then there's no generic
                 // platform way to reset memory back to its original state, so

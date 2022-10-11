@@ -45,6 +45,9 @@ pub struct Tunables {
     /// Flag for the component module whether adapter modules have debug
     /// assertions baked into them.
     pub debug_adapter_modules: bool,
+
+    /// Defer deallocation of instance slots.
+    pub deferred_dealloc: bool,
 }
 
 impl Default for Tunables {
@@ -91,6 +94,8 @@ impl Default for Tunables {
             guard_before_linear_memory: true,
             generate_address_map: true,
             debug_adapter_modules: false,
+
+            deferred_dealloc: false,
         }
     }
 }

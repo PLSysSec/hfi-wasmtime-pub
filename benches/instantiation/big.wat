@@ -1,7 +1,7 @@
 (module
-  (memory 24 24)
+  (memory 16 16)  ;; 1 MiB
   (data 0 (i32.const 0) "asdf")
-  (data 0 (i32.const 1048576) "jkl;")
+  (data 0 (i32.const 1000000) "jkl;")
   (func (export "_start")
         i32.const 0
         i32.const 0
@@ -27,6 +27,6 @@
         i32.const 262144
         i32.const 0
         i32.store
-        i32.const 1048576
+        i32.const 1048572  ;; 2^20 - 4
         i32.const 0
         i32.store))

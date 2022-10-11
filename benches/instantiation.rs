@@ -28,23 +28,27 @@ fn benchmark_name<'a>(strategy: &InstanceAllocationStrategy) -> &'static str {
     }
 }
 
-fn bench_deferred_cleanup(c: &mut Criterion, path: &Path) {
-    let mut group = c.benchmark_group("deferred_cleanup");
-
-    // Data points to try:
-    // - instance_slot_count = 1000, static_memory_maximum_size = 1 << 32 (4 GiB)
-    // - instance_slot_count = 10000, static_memory_maximum_size = 1 << 32 (4 GiB)
-    // - instance_slot_count = 10000, static_memory_maximum_size = 1 << 21 (2 MiB)
-    // - instance_slot_count = 100000, static_memory_maximum_size = 1 << 21 (2 MiB)
-    // - instance_slot_count = 1000000, static_memory_maximum_size = 1 << 21 (2 MiB)
+fn bench_deferred_cleanup(
+    c: &mut Criterion,
+    path: &Path,
+    instance_slot_count: usize,
+    batching: bool,
+    slot_size: u64,
+    guard: bool,
+) {
+    let mut group = c.benchmark_group(format!(
+        "deferred_cleanup: {} instances, batching: {}, slot_size: {} MiB",
+        instance_slot_count,
+        batching,
+        slot_size >> 20
+    ));
 
     // HFI: number of instances in the address space.
-    let instance_slot_count = 10000;
     let strategy = InstanceAllocationStrategy::Pooling {
         strategy: Default::default(),
         instance_limits: InstanceLimits {
-            memory_pages: 32,
-            count: instance_slot_count,
+            memory_pages: 16,
+            count: instance_slot_count as u32,
             ..Default::default()
         },
     };
@@ -52,13 +56,16 @@ fn bench_deferred_cleanup(c: &mut Criterion, path: &Path) {
     let state = {
         let mut config = Config::default();
         config.allocation_strategy(strategy.clone());
-        // 8 GiB per instance: 4 GiB heap, 2 GiB guards on either side
-        // (production config).
-        // HFI: change to 1 << 16 guard, 1 << 21 max size to allocate smaller.
-        config.static_memory_guard_size(1 << 16);
-        config.guard_before_linear_memory(true);
-        config.static_memory_maximum_size(1 << 21);
+        if guard {
+            config.static_memory_guard_size(1 << 31);
+            config.guard_before_linear_memory(true);
+        } else {
+            config.static_memory_guard_size(0);
+            config.guard_before_linear_memory(false);
+        }
+        config.static_memory_maximum_size(slot_size);
         config.static_memory_forced(true);
+        config.deferred_dealloc(batching);
 
         let engine = Engine::new(&config).expect("failed to create engine");
         let module = Module::from_file(&engine, path).expect("failed to load WASI example module");
@@ -93,6 +100,12 @@ fn bench_deferred_cleanup(c: &mut Criterion, path: &Path) {
                 .for_each(|(engine, pre)| {
                     instantiate(&pre, &engine).expect("failed to instantiate module");
                 });
+
+            // In batching case, this does one big madvise(); in
+            // non-batching case, it just returns slots to the free
+            // pool. (We want to return slots to the free pool in the
+            // same way in both cases to control for different
+            // allocation patterns in the two cases.)
             engine.deferred_cleanup();
         });
     });
@@ -103,7 +116,24 @@ fn bench_deferred_cleanup(c: &mut Criterion, path: &Path) {
 fn bench_instantiation(c: &mut Criterion) {
     for file in std::fs::read_dir("benches/instantiation").unwrap() {
         let path = file.unwrap().path();
-        bench_deferred_cleanup(c, &path);
+        for &(batching, instance_slot_count, slot_size, guard) in &[
+            (false, 1000, 1 << 32, true),
+            (true, 1000, 1 << 20, false),
+            (false, 2000, 1 << 32, true),
+            (true, 2000, 1 << 20, false),
+            (false, 3000, 1 << 32, true),
+            (true, 3000, 1 << 20, false),
+            (false, 4000, 1 << 32, true),
+            (true, 4000, 1 << 20, false),
+            (false, 5000, 1 << 32, true),
+            (true, 5000, 1 << 20, false),
+            (false, 10000, 1 << 32, true),
+            (true, 10000, 1 << 20, false),
+            (false, 100000, 1 << 32, true),
+            (true, 100000, 1 << 20, false),
+        ] {
+            bench_deferred_cleanup(c, &path, instance_slot_count, batching, slot_size, guard);
+        }
     }
 }
 

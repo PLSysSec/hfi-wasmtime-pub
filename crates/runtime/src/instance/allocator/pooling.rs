@@ -207,6 +207,7 @@ struct InstancePool {
     stale_slots: Mutex<Vec<SlotId>>,
     memories: MemoryPool,
     tables: TablePool,
+    deferred_dealloc: bool,
 }
 
 impl InstancePool {
@@ -239,6 +240,7 @@ impl InstancePool {
             stale_slots: Mutex::new(vec![]),
             memories: MemoryPool::new(instance_limits, tunables)?,
             tables: TablePool::new(instance_limits)?,
+            deferred_dealloc: tunables.deferred_dealloc,
         };
 
         Ok(pool)
@@ -350,20 +352,23 @@ impl InstancePool {
         // touched again until we write a fresh Instance in-place with
         // std::ptr::write in allocate() above.
 
-        // HFI: don't return index to free pool.
-        //self.index_allocator.lock().unwrap().free(SlotId(index));
+        // HFI: don't return index to free pool; for our benchmark, we
+        // want to use each slot once.
         self.stale_slots.lock().unwrap().push(SlotId(index));
     }
 
     pub unsafe fn deferred_dealloc(&self) {
         let slots = std::mem::take(&mut *self.stale_slots.lock().unwrap());
-        let memory_area = self.memories.mapping.as_slice();
-        rustix::mm::madvise(
-            &memory_area[0] as *const _ as *mut c_void,
-            memory_area.len(),
-            rustix::mm::Advice::LinuxDontNeed,
-        )
-        .unwrap();
+
+        if self.deferred_dealloc {
+            let memory_area = self.memories.mapping.as_slice();
+            rustix::mm::madvise(
+                &memory_area[0] as *const _ as *mut c_void,
+                memory_area.len(),
+                rustix::mm::Advice::LinuxDontNeed,
+            )
+            .unwrap();
+        }
 
         let mut alloc = self.index_allocator.lock().unwrap();
         for slot in slots {
@@ -474,7 +479,7 @@ impl InstancePool {
                 // image, just drop it here, and let the drop handler for the
                 // slot unmap in a way that retains the address space
                 // reservation.
-                if image.clear_and_remain_ready().is_ok() {
+                if image.clear_and_remain_ready(self.deferred_dealloc).is_ok() {
                     self.memories
                         .return_memory_image_slot(instance_index, def_mem_idx, image);
                 }
@@ -538,7 +543,6 @@ impl InstancePool {
             );
 
             drop(table);
-            // HFI: remove this; do it in bulk!
             decommit_table_pages(base, size).expect("failed to decommit table pages");
         }
     }
