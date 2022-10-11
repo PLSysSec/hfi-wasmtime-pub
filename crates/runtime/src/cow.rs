@@ -480,6 +480,7 @@ impl MemoryImageSlot {
                 // need to do.
                 // HFI: remove this call; we'll madvise the whole pool at once!
                 if !defer {
+                    //println!("madvise: {:x} size {:x}", self.base, self.cur_size);
                     unsafe {
                         rustix::mm::madvise(
                             self.base as *mut c_void,
@@ -502,10 +503,12 @@ impl MemoryImageSlot {
         }
 
         // mprotect the initial heap region beyond the initial heap size back to PROT_NONE.
-        self.set_protection(
-            self.initial_size..self.cur_size,
-            rustix::mm::MprotectFlags::empty(),
-        )?;
+        if !defer {
+            self.set_protection(
+                self.initial_size..self.cur_size,
+                rustix::mm::MprotectFlags::empty(),
+            )?;
+        }
         self.cur_size = self.initial_size;
         self.dirty = false;
         Ok(())

@@ -79,10 +79,7 @@ fn bench_deferred_cleanup(
         (engine, pre)
     };
 
-    let id = BenchmarkId::new(
-        benchmark_name(&strategy),
-        format!("deferred_cleanup on {}", path.display()),
-    );
+    let id = BenchmarkId::new(benchmark_name(&strategy), format!("{}", path.display()));
 
     group.bench_function(id, move |b| {
         let (ref engine, ref pre) = state;

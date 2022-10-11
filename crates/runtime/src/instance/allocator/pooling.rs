@@ -362,6 +362,13 @@ impl InstancePool {
 
         if self.deferred_dealloc {
             let memory_area = self.memories.mapping.as_slice();
+            /*
+            println!(
+                "big madvise: {:x} size {:x}",
+                &memory_area[0] as *const _ as usize,
+                memory_area.len()
+            );
+            */
             rustix::mm::madvise(
                 &memory_area[0] as *const _ as *mut c_void,
                 memory_area.len(),
