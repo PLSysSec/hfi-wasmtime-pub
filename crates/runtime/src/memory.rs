@@ -413,6 +413,11 @@ impl RuntimeLinearMemory for StaticMemory {
         // prior to arriving here.
         assert!(new_byte_size <= self.base.len());
 
+        // HFI: emulate a serializing instruction that updates the bound register.
+        unsafe {
+            std::arch::asm!("lfence");
+        }
+
         // Actually grow the memory.
         if let Some(image) = &mut self.memory_image {
             image.set_heap_limit(new_byte_size)?;
