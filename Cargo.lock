@@ -1330,6 +1330,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "growth_bench"
+version = "0.0.1"
+dependencies = [
+ "wasmtime",
+]
+
+[[package]]
 name = "half"
 version = "1.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"

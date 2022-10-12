@@ -88,6 +88,7 @@ members = [
   "examples/wasi/wasm",
   "examples/tokio/wasm",
   "fuzz",
+  "growth_bench",
 ]
 exclude = [
   'crates/wasi-common/WASI/tools/witx-cli',
