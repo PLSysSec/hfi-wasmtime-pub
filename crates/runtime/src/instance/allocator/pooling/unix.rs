@@ -58,7 +58,8 @@ pub fn commit_memory_pages(addr: *mut u8, len: usize) -> Result<()> {
 }
 
 pub fn decommit_memory_pages(addr: *mut u8, len: usize) -> Result<()> {
-    decommit(addr, len, true)
+    //decommit(addr, len, true)
+    Ok(())
 }
 
 pub fn commit_table_pages(_addr: *mut u8, _len: usize) -> Result<()> {

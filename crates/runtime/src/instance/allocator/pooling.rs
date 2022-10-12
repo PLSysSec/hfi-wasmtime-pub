@@ -724,8 +724,9 @@ impl MemoryPool {
             })?;
 
         // Create a completely inaccessible region to start
-        let mapping = Mmap::accessible_reserved(0, allocation_size)
+        let mut mapping = Mmap::accessible_reserved(0, allocation_size)
             .context("failed to create memory pool mapping")?;
+        mapping.make_accessible(0, allocation_size).unwrap();
 
         let num_image_slots = if cfg!(memory_init_cow) {
             max_instances * max_memories

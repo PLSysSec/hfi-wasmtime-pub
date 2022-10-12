@@ -417,16 +417,16 @@ impl RuntimeLinearMemory for StaticMemory {
         if let Some(image) = &mut self.memory_image {
             image.set_heap_limit(new_byte_size)?;
         } else {
-            let make_accessible = self
-                .make_accessible
-                .expect("make_accessible must be Some if this is not a CoW memory");
+            //let make_accessible = self
+            //    .make_accessible
+            //    .expect("make_accessible must be Some if this is not a CoW memory");
 
             // Operating system can fail to make memory accessible.
-            let old_byte_size = self.byte_size();
-            make_accessible(
-                unsafe { self.base.as_mut_ptr().add(old_byte_size) },
-                new_byte_size - old_byte_size,
-            )?;
+            //let old_byte_size = self.byte_size();
+            //make_accessible(
+            //    unsafe { self.base.as_mut_ptr().add(old_byte_size) },
+            //    new_byte_size - old_byte_size,
+            //)?;
         }
 
         // Update our accounting of the available size.

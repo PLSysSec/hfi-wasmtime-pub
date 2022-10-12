@@ -508,15 +508,17 @@ impl MemoryImageSlot {
         Ok(())
     }
 
-    fn set_protection(&self, range: Range<usize>, flags: rustix::mm::MprotectFlags) -> Result<()> {
+    fn set_protection(&self, range: Range<usize>, _flags: rustix::mm::MprotectFlags) -> Result<()> {
         assert!(range.start <= range.end);
         assert!(range.end <= self.static_size);
+        /*
         let mprotect_start = self.base.checked_add(range.start).unwrap();
         if range.len() > 0 {
             unsafe {
                 rustix::mm::mprotect(mprotect_start as *mut _, range.len(), flags)?;
             }
         }
+        */
 
         Ok(())
     }
@@ -537,9 +539,11 @@ impl MemoryImageSlot {
             let ptr = rustix::mm::mmap_anonymous(
                 self.base as *mut c_void,
                 self.static_size,
-                rustix::mm::ProtFlags::empty(),
+                //rustix::mm::ProtFlags::empty(),
+                rustix::mm::ProtFlags::READ | rustix::mm::ProtFlags::WRITE,
                 rustix::mm::MapFlags::PRIVATE | rustix::mm::MapFlags::FIXED,
             )?;
+            println!("anon heap at: {:x}", ptr as usize);
             assert_eq!(ptr as usize, self.base);
         }
         Ok(())
