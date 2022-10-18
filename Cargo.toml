@@ -53,6 +53,7 @@ wasmtime-runtime = { workspace = true }
 tokio = { version = "1.8.0", features = ["rt", "time", "macros", "rt-multi-thread"] }
 wast = { workspace = true }
 criterion = "0.3.4"
+pprof = { version = "0.3", features = ["flamegraph"] }
 num_cpus = "1.13.0"
 memchr = "2.4"
 async-trait = "0.1"
@@ -205,6 +206,34 @@ required-features = ["wasmtime-wasi/tokio"]
 
 [[bench]]
 name = "instantiation"
+harness = false
+
+[[bench]]
+name = "instantiation_echo"
+harness = false
+
+[[bench]]
+name = "instantiation_fib"
+harness = false
+
+[[bench]]
+name = "instantiation_html"
+harness = false
+
+[[bench]]
+name = "instantiation_jpeg"
+harness = false
+
+[[bench]]
+name = "instantiation_hash"
+harness = false
+
+[[bench]]
+name = "instantiation_tflite"
+harness = false
+
+[[bench]]
+name = "instantiation_xml"
 harness = false
 
 [[bench]]
