@@ -7,6 +7,7 @@ fn get_engine_and_module(path: &Path) -> (Engine, Module) {
         strategy: Default::default(),
         instance_limits: InstanceLimits {
             memory_pages: 2048, // 128 MiB
+            count: 10,
             ..Default::default()
         },
     });
