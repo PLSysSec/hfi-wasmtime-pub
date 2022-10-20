@@ -12,8 +12,8 @@ fn decommit(addr: *mut u8, len: usize, protect: bool) -> Result<()> {
                 use rustix::mm::{madvise, Advice};
 
                 if protect {
-                    mprotect(addr.cast(), len, MprotectFlags::empty())
-                        .context("failed to protect memory pages")?;
+//                    mprotect(addr.cast(), len, MprotectFlags::empty())
+//                        .context("failed to protect memory pages")?;
                 }
 
                 // On Linux, this is enough to cause the kernel to initialize
@@ -52,8 +52,9 @@ pub fn commit_memory_pages(addr: *mut u8, len: usize) -> Result<()> {
 
     // Just change the protection level to READ|WRITE
     unsafe {
-        mprotect(addr.cast(), len, MprotectFlags::READ | MprotectFlags::WRITE)
-            .context("failed to make linear memory pages read/write")
+//        mprotect(addr.cast(), len, MprotectFlags::READ | MprotectFlags::WRITE)
+//            .context("failed to make linear memory pages read/write")
+        Ok(())
     }
 }
 

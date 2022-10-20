@@ -492,7 +492,7 @@ impl InstancePool {
                 }
             } else {
                 // Otherwise, decommit the memory pages.
-                decommit_memory_pages(base, size).expect("failed to decommit linear memory pages");
+                //decommit_memory_pages(base, size).expect("failed to decommit linear memory pages");
             }
         }
     }
@@ -513,11 +513,11 @@ impl InstancePool {
         for (_, plan) in module.table_plans.iter().skip(module.num_imported_tables) {
             let base = bases.next().unwrap() as _;
 
-            commit_table_pages(
-                base as *mut u8,
-                self.tables.max_elements as usize * mem::size_of::<*mut u8>(),
-            )
-            .map_err(InstantiationError::Resource)?;
+//            commit_table_pages(
+//                base as *mut u8,
+//                self.tables.max_elements as usize * mem::size_of::<*mut u8>(),
+//            )
+//            .map_err(InstantiationError::Resource)?;
 
             tables.push(
                 Table::new_static(
@@ -550,7 +550,7 @@ impl InstancePool {
             );
 
             drop(table);
-            decommit_table_pages(base, size).expect("failed to decommit table pages");
+            //decommit_table_pages(base, size).expect("failed to decommit table pages");
         }
     }
 
@@ -758,8 +758,9 @@ impl MemoryPool {
         println!("heaps: allocation_size = {} GiB", allocation_size >> 30);
 
         // Create a completely inaccessible region to start
-        let mapping = Mmap::accessible_reserved(0, allocation_size)
+        let mut mapping = Mmap::accessible_reserved(0, allocation_size)
             .context("failed to create memory pool mapping")?;
+        mapping.make_accessible(0, allocation_size);
 
         let num_image_slots = if cfg!(memory_init_cow) {
             max_instances * max_memories
@@ -876,8 +877,9 @@ impl TablePool {
             .and_then(|c| c.checked_mul(max_instances))
             .ok_or_else(|| anyhow!("total size of instance tables exceeds addressable memory"))?;
 
-        let mapping = Mmap::accessible_reserved(allocation_size, allocation_size)
+        let mut mapping = Mmap::accessible_reserved(allocation_size, allocation_size)
             .context("failed to create table pool mapping")?;
+        mapping.make_accessible(0, allocation_size);
 
         Ok(Self {
             mapping,
@@ -950,8 +952,9 @@ impl StackPool {
             .checked_mul(max_instances)
             .ok_or_else(|| anyhow!("total size of execution stacks exceeds addressable memory"))?;
 
-        let mapping = Mmap::accessible_reserved(allocation_size, allocation_size)
+        let mut mapping = Mmap::accessible_reserved(allocation_size, allocation_size)
             .context("failed to create stack pool mapping")?;
+        mapping.make_accessible(0, allocation_size);
 
         // Set up the stack guard pages
         if allocation_size > 0 {
@@ -1007,8 +1010,8 @@ impl StackPool {
                 .as_mut_ptr()
                 .add((index * self.stack_size) + self.page_size);
 
-            commit_stack_pages(bottom_of_stack, size_without_guard)
-                .map_err(FiberStackError::Resource)?;
+            //commit_stack_pages(bottom_of_stack, size_without_guard)
+            //    .map_err(FiberStackError::Resource)?;
 
             wasmtime_fiber::FiberStack::from_top_ptr(bottom_of_stack.add(size_without_guard))
                 .map_err(|e| FiberStackError::Resource(e.into()))
@@ -1038,7 +1041,7 @@ impl StackPool {
         assert!(index < self.max_instances);
 
         if self.async_stack_zeroing {
-            reset_stack_pages_to_zero(bottom_of_stack as _, stack_size).unwrap();
+//            reset_stack_pages_to_zero(bottom_of_stack as _, stack_size).unwrap();
         }
 
         self.index_allocator.lock().unwrap().free(SlotId(index));

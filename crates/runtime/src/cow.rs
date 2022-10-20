@@ -469,6 +469,10 @@ impl MemoryImageSlot {
     #[allow(dead_code)] // ignore warnings as this is only used in some cfgs
     pub(crate) fn clear_and_remain_ready(&mut self, defer: bool) -> Result<()> {
         assert!(self.dirty);
+        //        println!(
+        //            "clear_and_remain_ready: base {:x} size {:x}: defer {}",
+        //            self.base, self.cur_size, defer
+        //        );
 
         cfg_if::cfg_if! {
             if #[cfg(target_os = "linux")] {
@@ -520,7 +524,7 @@ impl MemoryImageSlot {
         let mprotect_start = self.base.checked_add(range.start).unwrap();
         if range.len() > 0 {
             unsafe {
-                rustix::mm::mprotect(mprotect_start as *mut _, range.len(), flags)?;
+                //rustix::mm::mprotect(mprotect_start as *mut _, range.len(), flags)?;
             }
         }
 
@@ -543,7 +547,8 @@ impl MemoryImageSlot {
             let ptr = rustix::mm::mmap_anonymous(
                 self.base as *mut c_void,
                 self.static_size,
-                rustix::mm::ProtFlags::empty(),
+                //                rustix::mm::ProtFlags::empty(),
+                rustix::mm::ProtFlags::READ | rustix::mm::ProtFlags::WRITE,
                 rustix::mm::MapFlags::PRIVATE | rustix::mm::MapFlags::FIXED,
             )?;
             assert_eq!(ptr as usize, self.base);
