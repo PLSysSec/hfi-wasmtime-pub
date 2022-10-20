@@ -261,8 +261,9 @@ impl<'a> Instantiator<'a> {
                     // validity of the component means that type-checks have
                     // already been performed. This maens that the unsafety due
                     // to imports having the wrong type should not happen here.
-                    let i =
-                        unsafe { crate::Instance::new_started(store, module, imports.as_ref())? };
+                    let i = unsafe {
+                        crate::Instance::new_started(store, module, imports.as_ref(), 0)?
+                    };
                     self.data.instances.push(i);
                 }
 

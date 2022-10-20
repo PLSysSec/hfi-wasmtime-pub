@@ -464,6 +464,7 @@ impl<T> Store<T> {
                     imports: Default::default(),
                     store: StorePtr::empty(),
                     runtime_info: &shim,
+                    slot: 0,
                 })
                 .expect("failed to allocate default callee")
         };

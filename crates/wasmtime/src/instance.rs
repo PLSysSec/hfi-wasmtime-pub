@@ -102,13 +102,14 @@ impl Instance {
         mut store: impl AsContextMut,
         module: &Module,
         imports: &[Extern],
+        slot: usize,
     ) -> Result<Instance, Error> {
         let mut store = store.as_context_mut();
         let imports = Instance::typecheck_externs(store.0, module, imports)?;
         // Note that the unsafety here should be satisfied by the call to
         // `typecheck_externs` above which satisfies the condition that all
         // the imports are valid for this module.
-        unsafe { Instance::new_started(&mut store, module, imports.as_ref()) }
+        unsafe { Instance::new_started(&mut store, module, imports.as_ref(), slot) }
     }
 
     /// Same as [`Instance::new`], except for usage in [asynchronous stores].
@@ -169,13 +170,14 @@ impl Instance {
         store: &mut StoreContextMut<'_, T>,
         module: &Module,
         imports: Imports<'_>,
+        slot: usize,
     ) -> Result<Instance> {
         assert!(
             !store.0.async_support(),
             "must use async instantiation when async support is enabled",
         );
 
-        let (instance, start) = Instance::new_raw(store.0, module, imports)?;
+        let (instance, start) = Instance::new_raw(store.0, module, imports, slot)?;
         if let Some(start) = start {
             instance.start_raw(store, start)?;
         }
@@ -204,7 +206,7 @@ impl Instance {
 
         store
             .on_fiber(|store| {
-                let (instance, start) = Instance::new_raw(store.0, module, imports)?;
+                let (instance, start) = Instance::new_raw(store.0, module, imports, 0)?;
                 if let Some(start) = start {
                     instance.start_raw(store, start)?;
                 }
@@ -232,6 +234,7 @@ impl Instance {
         store: &mut StoreOpaque,
         module: &Module,
         imports: Imports<'_>,
+        slot: usize,
     ) -> Result<(Instance, Option<FuncIndex>)> {
         if !Engine::same(store.engine(), module.engine()) {
             bail!("cross-`Engine` instantiation is not currently supported");
@@ -264,6 +267,7 @@ impl Instance {
                     imports,
                     host_state: Box::new(Instance(instance_to_be)),
                     store: StorePtr::new(store.traitobj()),
+                    slot,
                 })?;
 
         // The instance still has lots of setup, for example
@@ -735,7 +739,11 @@ impl<T> InstancePre<T> {
     /// `store`, or if `store` has async support enabled. Additionally this
     /// function will panic if the `store` provided comes from a different
     /// [`Engine`] than the [`InstancePre`] originally came from.
-    pub fn instantiate(&self, mut store: impl AsContextMut<Data = T>) -> Result<Instance> {
+    pub fn instantiate(
+        &self,
+        mut store: impl AsContextMut<Data = T>,
+        slot: usize,
+    ) -> Result<Instance> {
         let mut store = store.as_context_mut();
         let imports =
             pre_instantiate_raw(&mut store.0, &self.module, &self.items, self.host_funcs)?;
@@ -743,7 +751,7 @@ impl<T> InstancePre<T> {
         // This unsafety should be handled by the type-checking performed by the
         // constructor of `InstancePre` to assert that all the imports we're passing
         // in match the module we're instantiating.
-        unsafe { Instance::new_started(&mut store, &self.module, imports.as_ref()) }
+        unsafe { Instance::new_started(&mut store, &self.module, imports.as_ref(), slot) }
     }
 
     /// Creates a new instance, running the start function asynchronously

@@ -111,7 +111,7 @@ impl<T> WastContext<T> {
 
     fn instantiate_module(&mut self, module: &[u8]) -> Result<Outcome<Instance>> {
         let module = Module::new(self.store.engine(), module)?;
-        let instance = match self.core_linker.instantiate(&mut self.store, &module) {
+        let instance = match self.core_linker.instantiate(&mut self.store, &module, 0) {
             Ok(i) => i,
             Err(e) => return e.downcast::<Trap>().map(Outcome::Trap),
         };

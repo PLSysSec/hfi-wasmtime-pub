@@ -306,13 +306,16 @@ impl InstancePool {
         &self,
         req: InstanceAllocationRequest,
     ) -> Result<InstanceHandle, InstantiationError> {
-        let index = {
-            let mut alloc = self.index_allocator.lock().unwrap();
-            if alloc.is_empty() {
-                return Err(InstantiationError::Limit(self.max_instances as u32));
-            }
-            alloc.alloc(req.runtime_info.unique_id()).index()
-        };
+        /*
+           let index = {
+               let mut alloc = self.index_allocator.lock().unwrap();
+               if alloc.is_empty() {
+                   return Err(InstantiationError::Limit(self.max_instances as u32));
+               }
+               alloc.alloc(req.runtime_info.unique_id()).index()
+            };
+        */
+        let index = req.slot;
 
         match unsafe { self.initialize_instance(index, req) } {
             Ok(handle) => Ok(handle),
@@ -354,12 +357,10 @@ impl InstancePool {
 
         // HFI: don't return index to free pool; for our benchmark, we
         // want to use each slot once.
-        self.stale_slots.lock().unwrap().push(SlotId(index));
+        //self.stale_slots.lock().unwrap().push(SlotId(index));
     }
 
     pub unsafe fn deferred_dealloc(&self) {
-        let slots = std::mem::take(&mut *self.stale_slots.lock().unwrap());
-
         if self.deferred_dealloc {
             let memory_area = self.memories.mapping.as_slice();
             /*
@@ -375,11 +376,6 @@ impl InstancePool {
                 rustix::mm::Advice::LinuxDontNeed,
             )
             .unwrap();
-        }
-
-        let mut alloc = self.index_allocator.lock().unwrap();
-        for slot in slots {
-            alloc.free(slot);
         }
     }
 

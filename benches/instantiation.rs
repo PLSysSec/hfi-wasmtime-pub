@@ -11,9 +11,9 @@ fn store(engine: &Engine) -> Store<WasiCtx> {
     Store::new(engine, wasi)
 }
 
-fn instantiate(pre: &InstancePre<WasiCtx>, engine: &Engine) -> Result<()> {
+fn instantiate(pre: &InstancePre<WasiCtx>, engine: &Engine, slot: usize) -> Result<()> {
     let mut store = store(engine);
-    let instance = pre.instantiate(&mut store)?;
+    let instance = pre.instantiate(&mut store, slot)?;
     instance
         .get_func(&mut store, "_start")
         .unwrap()
@@ -91,10 +91,11 @@ fn bench_deferred_cleanup(
             let pre_clone = pre.clone();
             std::iter::repeat_with(move || (engine_clone.clone(), pre_clone.clone()))
                 .take(instance_slot_count as usize)
+                .enumerate()
                 .collect::<Vec<_>>()
                 .par_iter()
-                .for_each(|(engine, pre)| {
-                    instantiate(&pre, &engine).expect("failed to instantiate module");
+                .for_each(|(i, (engine, pre))| {
+                    instantiate(&pre, &engine, *i).expect("failed to instantiate module");
                 });
 
             // In batching case, this does one big madvise(); in

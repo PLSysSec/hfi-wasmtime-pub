@@ -704,7 +704,7 @@ impl<T> Linker<T> {
                             func_ty.clone(),
                             move |mut caller, params, results| {
                                 // Create a new instance for this command execution.
-                                let instance = instance_pre.instantiate(&mut caller)?;
+                                let instance = instance_pre.instantiate(&mut caller, 0)?;
 
                                 // `unwrap()` everything here because we know the instance contains a
                                 // function export with the given name and signature because we're
@@ -724,7 +724,7 @@ impl<T> Linker<T> {
                 )
             }
             ModuleKind::Reactor => {
-                let instance = self.instantiate(&mut store, &module)?;
+                let instance = self.instantiate(&mut store, &module, 0)?;
 
                 if let Some(export) = instance.get_export(&mut store, "_initialize") {
                     if let Extern::Func(func) = export {
@@ -1007,8 +1007,10 @@ impl<T> Linker<T> {
         &self,
         mut store: impl AsContextMut<Data = T>,
         module: &Module,
+        slot: usize,
     ) -> Result<Instance> {
-        self.instantiate_pre(&mut store, module)?.instantiate(store)
+        self.instantiate_pre(&mut store, module)?
+            .instantiate(store, slot)
     }
 
     /// Attempts to instantiate the `module` provided. This is the same as
