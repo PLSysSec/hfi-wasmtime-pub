@@ -117,6 +117,7 @@ fn bench_instantiation(c: &mut Criterion) {
             //            (true, 1000, 1 << 17, false),
             (false, 2000, 1 << 32, true),
             (true, 2000, 1 << 20, false),
+            (true, 2000, 1 << 32, true),
             /*            (false, 3000, 1 << 32, true),
             (true, 3000, 1 << 17, false),
             (false, 4000, 1 << 32, true),
