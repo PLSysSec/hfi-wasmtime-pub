@@ -1,5 +1,7 @@
 (module
   (memory 2 2)  ;; 128 KiB
+  (data 0 (i32.const 0) "asdf")
+  (data 0 (i32.const 65536) "jkl;")
   (func (export "_start")
         i32.const 0
         i32.const 0

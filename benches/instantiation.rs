@@ -87,24 +87,22 @@ fn bench_deferred_cleanup(
         // benchmark the amount of time it takes to instantiate this
         // module.
         b.iter(move || {
-            for _ in 0..10 {
-                let engine_clone = engine.clone();
-                let pre_clone = pre.clone();
-                std::iter::repeat_with(move || (engine_clone.clone(), pre_clone.clone()))
-                    .take(instance_slot_count as usize)
-                    .collect::<Vec<_>>()
-                    .par_iter()
-                    .for_each(|(engine, pre)| {
-                        instantiate(&pre, &engine).expect("failed to instantiate module");
-                    });
+            let engine_clone = engine.clone();
+            let pre_clone = pre.clone();
+            std::iter::repeat_with(move || (engine_clone.clone(), pre_clone.clone()))
+                .take(instance_slot_count as usize)
+                .collect::<Vec<_>>()
+                .par_iter()
+                .for_each(|(engine, pre)| {
+                    instantiate(&pre, &engine).expect("failed to instantiate module");
+                });
 
-                // In batching case, this does one big madvise(); in
-                // non-batching case, it just returns slots to the free
-                // pool. (We want to return slots to the free pool in the
-                // same way in both cases to control for different
-                // allocation patterns in the two cases.)
-                engine.deferred_cleanup();
-            }
+            // In batching case, this does one big madvise(); in
+            // non-batching case, it just returns slots to the free
+            // pool. (We want to return slots to the free pool in the
+            // same way in both cases to control for different
+            // allocation patterns in the two cases.)
+            engine.deferred_cleanup();
         });
     });
 

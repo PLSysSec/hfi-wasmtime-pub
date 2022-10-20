@@ -492,7 +492,10 @@ impl InstancePool {
                 }
             } else {
                 // Otherwise, decommit the memory pages.
-                //decommit_memory_pages(base, size).expect("failed to decommit linear memory pages");
+                if !self.deferred_dealloc {
+                    decommit_memory_pages(base, size)
+                        .expect("failed to decommit linear memory pages");
+                }
             }
         }
     }
@@ -513,11 +516,11 @@ impl InstancePool {
         for (_, plan) in module.table_plans.iter().skip(module.num_imported_tables) {
             let base = bases.next().unwrap() as _;
 
-//            commit_table_pages(
-//                base as *mut u8,
-//                self.tables.max_elements as usize * mem::size_of::<*mut u8>(),
-//            )
-//            .map_err(InstantiationError::Resource)?;
+            //            commit_table_pages(
+            //                base as *mut u8,
+            //                self.tables.max_elements as usize * mem::size_of::<*mut u8>(),
+            //            )
+            //            .map_err(InstantiationError::Resource)?;
 
             tables.push(
                 Table::new_static(
@@ -1041,7 +1044,7 @@ impl StackPool {
         assert!(index < self.max_instances);
 
         if self.async_stack_zeroing {
-//            reset_stack_pages_to_zero(bottom_of_stack as _, stack_size).unwrap();
+            //            reset_stack_pages_to_zero(bottom_of_stack as _, stack_size).unwrap();
         }
 
         self.index_allocator.lock().unwrap().free(SlotId(index));

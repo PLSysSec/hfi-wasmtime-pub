@@ -12,8 +12,8 @@ fn decommit(addr: *mut u8, len: usize, protect: bool) -> Result<()> {
                 use rustix::mm::{madvise, Advice};
 
                 if protect {
-//                    mprotect(addr.cast(), len, MprotectFlags::empty())
-//                        .context("failed to protect memory pages")?;
+                    //mprotect(addr.cast(), len, MprotectFlags::empty())
+                    //.context("failed to protect memory pages")?;
                 }
 
                 // On Linux, this is enough to cause the kernel to initialize
@@ -68,7 +68,8 @@ pub fn commit_table_pages(_addr: *mut u8, _len: usize) -> Result<()> {
 }
 
 pub fn decommit_table_pages(addr: *mut u8, len: usize) -> Result<()> {
-    decommit(addr, len, false)
+    //    decommit(addr, len, false)
+    Ok(())
 }
 
 #[cfg(feature = "async")]
@@ -79,5 +80,6 @@ pub fn commit_stack_pages(_addr: *mut u8, _len: usize) -> Result<()> {
 
 #[cfg(feature = "async")]
 pub fn reset_stack_pages_to_zero(addr: *mut u8, len: usize) -> Result<()> {
-    decommit(addr, len, false)
+    //    decommit(addr, len, false)
+    Ok(())
 }
