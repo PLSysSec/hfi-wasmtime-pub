@@ -435,6 +435,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "colorguard"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "syscalls",
+]
+
+[[package]]
+name = "colorguard_capacity_test"
+version = "0.1.0"
+dependencies = [
+ "colorguard",
+ "rayon",
+ "wasmtime",
+ "wasmtime-wasi",
+]
+
+[[package]]
 name = "component-fuzz-util"
 version = "0.0.0"
 dependencies = [
@@ -2571,6 +2589,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde_repr"
+version = "0.1.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9a5ec9fa74a20ebbe5d9ac23dac1fc96ba0ecfe9f50f2843b52e537b10fbcb4e"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "sha2"
 version = "0.9.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2763,6 +2792,17 @@ dependencies = [
  "quote",
  "syn",
  "unicode-xid",
+]
+
+[[package]]
+name = "syscalls"
+version = "0.6.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "535e4a480d47370482f8251117cba053e32067862c439dcd4c9ea4026d08f88e"
+dependencies = [
+ "cc",
+ "serde",
+ "serde_repr",
 ]
 
 [[package]]
@@ -3429,6 +3469,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "clap 3.2.8",
+ "colorguard",
  "component-macro-test",
  "component-test-util",
  "criterion",
@@ -3443,6 +3484,7 @@ dependencies = [
  "once_cell",
  "rayon",
  "rustix",
+ "syscalls",
  "target-lexicon",
  "tempfile",
  "test-programs",
@@ -3650,6 +3692,7 @@ dependencies = [
  "anyhow",
  "cc",
  "cfg-if",
+ "colorguard",
  "encoding_rs",
  "indexmap",
  "libc",

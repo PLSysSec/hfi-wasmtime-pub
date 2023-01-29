@@ -37,6 +37,7 @@ libc = "0.2.60"
 humantime = "2.0.0"
 once_cell = { workspace = true }
 listenfd = "1.0.0"
+colorguard = { workspace = true }
 
 [target.'cfg(unix)'.dependencies]
 rustix = { workspace = true, features = ["mm", "param"] }
@@ -62,6 +63,7 @@ wasmtime-wast = { workspace = true, features = ['component-model'] }
 wasmtime-component-util = { workspace = true }
 component-macro-test = { path = "crates/misc/component-macro-test" }
 component-test-util = { workspace = true }
+syscalls = "0.6.7"
 
 [target.'cfg(windows)'.dev-dependencies]
 windows-sys = { workspace = true, features = ["Win32_System_Memory"] }
@@ -88,6 +90,7 @@ members = [
   "examples/wasi/wasm",
   "examples/tokio/wasm",
   "fuzz",
+  "benches/colorguard_capacity_test"
 ]
 exclude = [
   'crates/wasi-common/WASI/tools/witx-cli',
@@ -126,6 +129,7 @@ wasi-common = { path = "crates/wasi-common", version = "=3.0.0" }
 wasi-tokio = { path = "crates/wasi-common/tokio", version = "=3.0.0" }
 wasi-cap-std-sync = { path = "crates/wasi-common/cap-std-sync", version = "=3.0.0" }
 wasmtime-fuzzing = { path = "crates/fuzzing" }
+colorguard = { path = "crates/colorguard"}
 
 cranelift-wasm = { path = "cranelift/wasm", version = "0.90.0" }
 cranelift-codegen = { path = "cranelift/codegen", version = "0.90.0" }
@@ -205,6 +209,10 @@ required-features = ["wasmtime-wasi/tokio"]
 
 [[bench]]
 name = "instantiation"
+harness = false
+
+[[bench]]
+name = "mpk_pooling"
 harness = false
 
 [[bench]]

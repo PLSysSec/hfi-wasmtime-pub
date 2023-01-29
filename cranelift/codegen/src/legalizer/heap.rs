@@ -21,6 +21,7 @@ pub fn expand_heap_addr(
     access_size: Uimm32,
 ) {
     match func.heaps[heap].style {
+        /*
         ir::HeapStyle::Dynamic { bound_gv } => dynamic_addr(
             isa,
             inst,
@@ -30,13 +31,25 @@ pub fn expand_heap_addr(
             bound_gv,
             func,
         ),
+        */
+        ir::HeapStyle::Dynamic { bound_gv: _ } => static_addr(
+            isa,
+            inst,
+            heap,
+            offset,
+            u64::from(access_size),
+            /* artifically big bound! */ 0x2_0000_0000,
+            func,
+            cfg,
+        ),
         ir::HeapStyle::Static { bound } => static_addr(
             isa,
             inst,
             heap,
             offset,
             u64::from(access_size),
-            bound.into(),
+            0x2_0000_0000,
+            //bound.into(),
             func,
             cfg,
         ),

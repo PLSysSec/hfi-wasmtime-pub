@@ -430,6 +430,7 @@ impl<'a> SerializedModule<'a> {
 
             // Just a debugging aid, doesn't affect functionality at all.
             debug_adapter_modules: _,
+            mpk_pooling: _,
         } = self.metadata.tunables;
 
         Self::check_int(

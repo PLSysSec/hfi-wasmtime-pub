@@ -1433,8 +1433,10 @@ impl Config {
         if self.max_wasm_stack == 0 {
             bail!("max_wasm_stack size cannot be zero");
         }
-        if self.tunables.static_memory_offset_guard_size
-            < self.tunables.dynamic_memory_offset_guard_size
+        // this condition is fine if we are using mpk pooling
+        if (self.tunables.static_memory_offset_guard_size
+            < self.tunables.dynamic_memory_offset_guard_size)
+            && !self.tunables.mpk_pooling
         {
             bail!("static memory guard size cannot be smaller than dynamic memory guard size");
         }
@@ -1549,6 +1551,12 @@ impl Config {
     #[cfg(feature = "component-model")]
     pub fn debug_adapter_modules(&mut self, debug: bool) -> &mut Self {
         self.tunables.debug_adapter_modules = debug;
+        self
+    }
+
+    /// Enable mpk pooling.
+    pub fn mpk_pooling(&mut self, mpk_pooling: bool) -> &mut Self {
+        self.tunables.mpk_pooling = mpk_pooling;
         self
     }
 }

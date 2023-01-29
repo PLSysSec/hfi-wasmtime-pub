@@ -14,6 +14,7 @@ use super::{
 use crate::{instance::Instance, Memory, Mmap, Table};
 use crate::{MemoryImageSlot, ModuleRuntimeInfo, Store};
 use anyhow::{anyhow, bail, Context, Result};
+use colorguard::*;
 use libc::c_void;
 use std::convert::TryFrom;
 use std::mem;
@@ -206,6 +207,7 @@ struct InstancePool {
     index_allocator: Mutex<PoolingAllocationState>,
     memories: MemoryPool,
     tables: TablePool,
+    mpk_pooling: bool,
 }
 
 impl InstancePool {
@@ -237,6 +239,7 @@ impl InstancePool {
             index_allocator: Mutex::new(PoolingAllocationState::new(strategy, max_instances)),
             memories: MemoryPool::new(instance_limits, tunables)?,
             tables: TablePool::new(instance_limits)?,
+            mpk_pooling: tunables.mpk_pooling,
         };
 
         Ok(pool)
@@ -715,17 +718,33 @@ impl MemoryPool {
         // `initial_memory_offset` variable here. If guards aren't specified
         // before linear memories this is set to `0`, otherwise it's set to
         // the same size as guard regions for other memories.
-        let allocation_size = memory_size
-            .checked_mul(max_memories)
-            .and_then(|c| c.checked_mul(max_instances))
-            .and_then(|c| c.checked_add(initial_memory_offset))
-            .ok_or_else(|| {
-                anyhow!("total size of memory reservation exceeds addressable memory")
-            })?;
+
+        // if we are using colorguard, allocate an extra 8G
+        let allocation_size = if tunables.mpk_pooling {
+            memory_size
+                .checked_mul(max_memories)
+                .and_then(|c| c.checked_mul(max_instances))
+                .and_then(|c| c.checked_add(initial_memory_offset))
+                .and_then(|c| c.checked_add(0x2_0000_0000)) // extra 8G for final guard page
+                .ok_or_else(|| {
+                    anyhow!("total size of memory reservation exceeds addressable memory")
+                })?
+        } else {
+            memory_size
+                .checked_mul(max_memories)
+                .and_then(|c| c.checked_mul(max_instances))
+                .and_then(|c| c.checked_add(initial_memory_offset))
+                .ok_or_else(|| {
+                    anyhow!("total size of memory reservation exceeds addressable memory")
+                })?
+        };
 
         // Create a completely inaccessible region to start
         let mapping = Mmap::accessible_reserved(0, allocation_size)
             .context("failed to create memory pool mapping")?;
+        if tunables.mpk_pooling {
+            colorguard_color_memory(mapping.as_ptr(), memory_size, max_instances);
+        }
 
         let num_image_slots = if cfg!(memory_init_cow) {
             max_instances * max_memories
@@ -842,8 +861,10 @@ impl TablePool {
             .and_then(|c| c.checked_mul(max_instances))
             .ok_or_else(|| anyhow!("total size of instance tables exceeds addressable memory"))?;
 
-        let mapping = Mmap::accessible_reserved(allocation_size, allocation_size)
+        let mut mapping = Mmap::accessible_reserved(allocation_size, allocation_size)
             .context("failed to create table pool mapping")?;
+
+        mapping.make_accessible(0, allocation_size)?;
 
         Ok(Self {
             mapping,
